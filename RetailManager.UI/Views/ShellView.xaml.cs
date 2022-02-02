@@ -19,9 +19,12 @@ namespace RetailManager.UI.Views
     /// </summary>
     public partial class ShellView : Window
     {
-        public ShellView()
+        private ICalculations _calculations;
+
+        public ShellView(ICalculations calculations)
         {
-            InitializeComponent();
+            _calculations = calculations;
+            //InitializeComponent();
         }
     }
 }
