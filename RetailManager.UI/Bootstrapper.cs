@@ -1,9 +1,17 @@
-﻿using Caliburn.Micro;
+﻿using AutoMapper;
+using Caliburn.Micro;
+using RetailManager.UI.DAL.Api;
+using RetailManager.UI.DAL.Helpers;
+using RetailManager.UI.DAL.Models;
+using RetailManager.UI.Helpers;
+using RetailManager.UI.Models;
 using RetailManager.UI.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
+using TRMDesktopUI.Library.Api;
 
 namespace RetailManager.UI
 {
@@ -14,18 +22,41 @@ namespace RetailManager.UI
         public Bootstrapper()
         {
             Initialize();
+
+            ConventionManager.AddElementConvention<PasswordBox>(
+            PasswordBoxHelper.BoundPasswordProperty,
+            "Password",
+            "PasswordChanged");
+        }
+
+        private IMapper ConfigureAutomapper()
+        {
+            var config = new MapperConfiguration(cfg =>
+            {
+                cfg.CreateMap<ProductModel, ProductDisplayModel>();
+                cfg.CreateMap<CartItemModel, CartItemDisplayModel>();
+            });
+
+            var mapper = config.CreateMapper();
+
+            return mapper;
         }
 
         protected override void Configure()
         {
-            _container.Instance(_container);
+            _container.Instance(ConfigureAutomapper());
+
+            _container.Instance(_container)
+                .PerRequest<IProductEndpoint, ProductEndpoint>()
+                .PerRequest<IUserEndpoint, UserEndpoint>()
+                .PerRequest<ISaleEndpoint, SaleEndpoint>();
 
             _container
                 .Singleton<IWindowManager, WindowManager>()
-                .Singleton<IEventAggregator, EventAggregator>();
-
-            _container
-                .PerRequest<ICalculations, Calculations>();
+                .Singleton<IEventAggregator, EventAggregator>()
+                .Singleton<ILoggedInUserModel, LoggedInUserModel>()
+                .Singleton<IConfigHelper, ConfigHelper>()
+                .Singleton<IAPIHelper, APIHelper>();
 
             GetType().Assembly.GetTypes()
                 .Where(type => type.IsClass)
@@ -38,7 +69,6 @@ namespace RetailManager.UI
         protected override void OnStartup(object sender, StartupEventArgs e)
         {
             DisplayRootViewFor<ShellViewModel>();
-            //base.OnStartup(sender, e);
         }
 
         protected override object GetInstance(Type service, string key)
